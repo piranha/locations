@@ -22,9 +22,9 @@
 
 (defn map-container [data owner]
   (let [maybe-create-map (fn [node {:keys [constructor options object]}]
-                           (if (and constructor options (not object))
-                             (om/update! data assoc [:map :object]
-                                         (constructor. node options))))]
+                           (when (and constructor options (not object))
+                             (om/transact! data [:map :object] assoc
+                                           (constructor. node options))))]
     (reify
       om/IDidMount
       (did-mount [this node]
