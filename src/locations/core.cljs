@@ -14,7 +14,7 @@
   (-clone [x] (js/String. x)))
 
 (def app-state (atom {:state :edit
-                      :orig-locations "qwe"
+                      :input "qwe"
                       :locations []
                       :map {:options nil
                             :constructor nil
@@ -32,7 +32,7 @@
                        (condp = ev
                          :search (do (om/update! data assoc-in [:state] :display)
                                      (om/update! data update-in [:locations]
-                                                 #(parse-locations (:orig-locations data)))
+                                                 #(parse-locations (:input data)))
                                      (search))
                          :edit (do (println "EDIT")
                                    (om/update! data assoc-in [:state] :edit))
@@ -55,7 +55,7 @@
         (html [:div.container
                [:div.row
                 (condp = (:state data)
-                  :edit (om/build views/address-input (:orig-locations data)
+                  :edit (om/build views/address-input (:input data)
                                   {:opts control-c})
                   :display (om/build views/address-display (:locations data)
                                      {:opts control-c})
