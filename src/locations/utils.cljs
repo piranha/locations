@@ -14,3 +14,8 @@
       (s/replace #"[^:]+:" "")
       ;; (some description)
       (s/replace #"\(.*?\)" "")))
+
+(defn parse-locations [text]
+  (->> (s/split text #"\n")
+       (mapv s/trim)
+       (filterv seq)))
