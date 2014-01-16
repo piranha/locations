@@ -24,11 +24,9 @@
            (fn [_ _ _ new]
              (println (:locations new))))
 
-(defn root [data]
-  (let [control-c (chan)
-        search (fn [] (println "Searching..."))
+(defn root [data owner]
+  (let [search (fn [] (println "Searching..."))
         handle-event (fn [ev]
-                       (println ev)
                        (condp = ev
                          :search (do (om/update! data assoc-in [:state] :display)
                                      (om/update! data update-in [:locations]
@@ -38,32 +36,29 @@
                                    (om/update! data assoc-in [:state] :edit))
                          println))]
 
-    (aset js/window "qwe" (fn [n]
-                            (println n)
-                            (put! control-c (keyword n))))
-    (aset js/window "control" control-c)
     (reify
       om/IWillMount
       (will-mount [this]
-        (go (while true
-              ;; FIXME: somehow this does not catch second event or
-              ;; something. Really no idea what's going on.
-              (handle-event (<! control-c)))))
+        (let [control (chan)]
+          (om/set-state! owner :control control)
+          (go (while true
+                ;; FIXME: somehow this does not catch second event or
+                ;; something. Really no idea what's going on.
+                (handle-event (<! control))))))
 
       om/IRender
       (render [this]
-        (html [:div.container
-               [:div.row
-                (condp = (:state data)
-                  :edit (om/build views/address-input (:input data)
-                                  {:opts control-c})
-                  :display (om/build views/address-display (:locations data)
-                                     {:opts control-c})
-                  [:div (str "Unknown :state - " (:state data))])
-                (om/build views/map-container data)]])))))
+        (let [control (om/get-state owner :control)]
+          (html [:div.container
+                 [:div.row
+                  (condp = (:state data)
+                    :edit (om/build views/address-input (:input data)
+                                    {:opts control})
+                    :display (om/build views/address-display (:locations data)
+                                       {:opts control})
+                    [:div (str "Unknown :state - " (:state data))])
+                  (om/build views/map-container data)]]))))))
 
 
 (om/root app-state root js/document.body)
-
-
 (ymaps/ready #(init-map app-state))
