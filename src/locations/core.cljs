@@ -5,7 +5,7 @@
             [cljs.core.async :refer [chan put! >! <!]]
             [locations.api :refer [init-map]]
             [locations.views :as views]
-            [locations.utils :refer [clean-address parse-locations]]))
+            [locations.utils :refer [clean-address parse-locations control-chan]]))
 
 (enable-console-print!)
 
@@ -24,40 +24,37 @@
            (fn [_ _ _ new]
              (println (:locations new))))
 
-(defn root [data owner]
-  (let [search (fn [] (println "Searching..."))
+(defn root [_ owner]
+  (let [search (fn []
+                 (println "Searching..."))
         handle-event (fn [ev]
-                       (condp = ev
-                         :search (do (om/update! data assoc-in [:state] :display)
-                                     (om/update! data update-in [:locations]
-                                                 #(parse-locations (:input data)))
-                                     (search))
-                         :edit (do (println "EDIT")
-                                   (om/update! data assoc-in [:state] :edit))
-                         println))]
+                       (let [data (om/get-props owner)]
+                         (condp = ev
+                           :search (do (om/update! data assoc-in [:state] :display)
+                                       (om/update! data update-in [:locations]
+                                                   #(parse-locations (:input data)))
+                                       (search))
+                           :edit (do (println "EDIT")
+                                     (om/update! data assoc-in [:state] :edit))
+                           println)))]
 
     (reify
       om/IWillMount
       (will-mount [this]
-        (let [control (chan)]
-          (om/set-state! owner :control control)
-          (go (while true
-                ;; FIXME: somehow this does not catch second event or
-                ;; something. Really no idea what's going on.
-                (handle-event (<! control))))))
+        (om/set-state! owner :control
+                       (control-chan handle-event)))
 
       om/IRender
-      (render [this]
-        (let [control (om/get-state owner :control)]
-          (html [:div.container
-                 [:div.row
-                  (condp = (:state data)
-                    :edit (om/build views/address-input (:input data)
-                                    {:opts control})
-                    :display (om/build views/address-display (:locations data)
-                                       {:opts control})
-                    [:div (str "Unknown :state - " (:state data))])
-                  (om/build views/map-container data)]]))))))
+      (render [this data {:keys [control]}]
+        (html [:div.container
+               [:div.row
+                (condp = (:state data)
+                  :edit (om/build views/address-input (:input data)
+                                  {:opts control})
+                  :display (om/build views/address-display (:locations data)
+                                     {:opts control})
+                  [:div (str "Unknown :state - " (:state data))])
+                (om/build views/map-container data)]])))))
 
 
 (om/root app-state root js/document.body)

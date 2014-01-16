@@ -1,5 +1,7 @@
 (ns locations.utils
-  (:require [clojure.string :as s]))
+  (:require-macros [cljs.core.async.macros :refer [go alt!]])
+  (:require [clojure.string :as s]
+            [cljs.core.async :refer [chan put! >! <!]]))
 
 
 (defn clean [value]
@@ -16,6 +18,16 @@
       (s/replace #"\(.*?\)" "")))
 
 (defn parse-locations [text]
+  (println text)
   (->> (s/split text #"\n")
        (mapv s/trim)
-       (filterv seq)))
+       (filterv seq)
+       (mapv #(identity {:text % :clear (clean %)}))))
+
+(defn control-chan [handler]
+  (let [c (chan)]
+    (go (loop [e (<! c)]
+          (when e
+            (handler e)
+            (recur (<! c)))))
+    c))

@@ -26,6 +26,11 @@
               [:button.btn.btn-primary {:on-click search} "Search"]]]]))))
 
 
+(defn single-address [item]
+  (om/component
+   (html [:li {:title (:clear item)} (:text item)])))
+
+
 (defn address-display [locations owner control-c]
   (let [edit (fn [e]
                (.preventDefault e)
@@ -37,7 +42,7 @@
 
              [:ul
               (for [item locations]
-                [:li item])]
+                (om/build single-address item {:key :text}))]
 
              [:div.row
               [:button.btn.btn-primary {:on-click edit} "Edit"]]
@@ -58,6 +63,6 @@
         (maybe-create-map (.getDOMNode owner) (next-props :map)))
 
       om/IRender
-      (render [this]
+      (render [this props state]
         (html [:div#map-canvas.col-md-9
                {:style {:height "100%"}}])))))
