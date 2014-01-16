@@ -31,3 +31,14 @@
             (handler e)
             (recur (<! c)))))
     c))
+
+(defn <?* [promise]
+  (go
+   (let [succ (chan)
+         err (chan)]
+     (.then promise
+            #(put! succ %)
+            #(put! err %))
+     (alt!
+      err ([e c] (throw e))
+      succ ([e c] e)))))

@@ -45,17 +45,17 @@
                        (control-chan handle-event)))
 
       om/IRender
-      (render [this data {:keys [control]}]
+      (render [this {:keys [state input locations] :as data} {:keys [control]}]
         (html [:div.container
                [:div.row
-                (condp = (:state data)
-                  :edit (om/build views/address-input (:input data)
-                                  {:opts control})
-                  :display (om/build views/address-display (:locations data)
-                                     {:opts control})
-                  [:div (str "Unknown :state - " (:state data))])
+                (condp = state
+                  :edit (om/build views/address-input
+                                  input {:opts control})
+                  :display (om/build views/address-display
+                                     locations {:opts control})
+                  [:div (str "Unknown :state - " state)])
                 (om/build views/map-container data)]])))))
 
 
 (om/root app-state root js/document.body)
-(ymaps/ready #(init-map app-state))
+(js/ymaps.ready #(init-map app-state))
