@@ -24,25 +24,26 @@
            (fn [_ _ _ new]
              (println (:locations new))))
 
+(defn handle-event [ev owner & {:keys [search]}]
+  (let [data (om/get-props owner)]
+    (condp = ev
+      :search (do (om/update! data assoc-in [:state] :display)
+                  (om/update! data update-in [:locations]
+                              #(parse-locations (:input data)))
+                  (search))
+      :edit (do (println "EDIT")
+                (om/update! data assoc-in [:state] :edit))
+      println)))
+
 (defn root [{:keys [state input locations] :as data} owner]
   (let [search (fn []
-                 (println "Searching..."))
-        handle-event (fn [ev]
-                       (let [data (om/get-props owner)]
-                         (condp = ev
-                           :search (do (om/update! data assoc-in [:state] :display)
-                                       (om/update! data update-in [:locations]
-                                                   #(parse-locations (:input data)))
-                                       (search))
-                           :edit (do (println "EDIT")
-                                     (om/update! data assoc-in [:state] :edit))
-                           println)))]
-
+                 (println "Searching..."))]
     (reify
       om/IWillMount
       (will-mount [this]
         (om/set-state! owner :control
-                       (control-chan handle-event)))
+                       (control-chan #(handle-event % owner
+                                                    :search search))))
 
       om/IRenderState
       (render-state [this {:keys [control]}]
