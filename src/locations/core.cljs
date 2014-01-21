@@ -24,7 +24,7 @@
            (fn [_ _ _ new]
              (println (:locations new))))
 
-(defn root [_ owner]
+(defn root [{:keys [state input locations] :as data} owner]
   (let [search (fn []
                  (println "Searching..."))
         handle-event (fn [ev]
@@ -44,8 +44,8 @@
         (om/set-state! owner :control
                        (control-chan handle-event)))
 
-      om/IRender
-      (render [this {:keys [state input locations] :as data} {:keys [control]}]
+      om/IRenderState
+      (render-state [this {:keys [control]}]
         (html [:div.container
                [:div.row
                 (condp = state

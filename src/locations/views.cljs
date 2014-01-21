@@ -45,8 +45,7 @@
                 (om/build single-address item {:key :text}))]
 
              [:div.row
-              [:button.btn.btn-primary {:on-click edit} "Edit"]]
-             ]]))))
+              [:button.btn.btn-primary {:on-click edit} "Edit"]]]]))))
 
 (defn map-container [data owner]
   (let [maybe-create-map (fn [node {:keys [constructor options object]}]
@@ -63,6 +62,6 @@
         (maybe-create-map (.getDOMNode owner) (next-props :map)))
 
       om/IRender
-      (render [this props state]
+      (render [this]
         (html [:div#map-canvas.col-md-9
                {:style {:height "100%"}}])))))
