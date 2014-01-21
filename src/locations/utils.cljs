@@ -24,11 +24,11 @@
        (filterv seq)
        (mapv #(identity {:text % :clear (clean %)}))))
 
-(defn control-chan [handler]
+(defn control-chan [handler & args]
   (let [c (chan)]
     (go (loop [e (<! c)]
           (when e
-            (handler e)
+            (apply handler e args)
             (recur (<! c)))))
     c))
 

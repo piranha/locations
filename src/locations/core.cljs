@@ -42,8 +42,8 @@
       om/IWillMount
       (will-mount [this]
         (om/set-state! owner :control
-                       (control-chan #(handle-event % owner
-                                                    :search search))))
+                       (control-chan handle-event
+                                     owner :search search)))
 
       om/IRenderState
       (render-state [this {:keys [control]}]
