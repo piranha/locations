@@ -62,19 +62,23 @@
       (will-update [this next-props next-state]
         (maybe-create-map (.getDOMNode owner) (next-props :map))
 
-        (let [markers-old (:markers (om/get-props owner))
-              markers-new (:markers next-props)
+        (let [points-old (:points (om/get-props owner))
+              points-new (:points next-props)
               map-object (-> next-props :map :object)]
+          (when map-object
 
-          ;; remove non-existent points
-          (doseq [[k point] markers-old]
-            (when-not (markers-new k)
-              (remove-point map-object point)))
+            ;; remove non-existent points
+            (doseq [[k point] points-old
+                    :when point]
+              (when-not (points-new k)
+                (remove-point map-object point)))
 
-          ;; add new points
-          (doseq [[k point] markers-new]
-            (when-not (markers-old k)
-              (add-point map-object point)))))
+            ;; add new points
+            (doseq [[k point] points-new
+                    :when point]
+              (js/console.log k)
+              (when-not (points-old k)
+                (add-point map-object point))))))
 
       om/IRender
       (render [this]

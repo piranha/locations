@@ -21,6 +21,7 @@
   (->> (s/split text #"\n")
        (mapv s/trim)
        (filterv seq)
+       distinct
        (mapv #(identity {:text % :clear (clean %)}))))
 
 (defn control-chan [handler & args]

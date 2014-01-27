@@ -26,13 +26,15 @@
 (let [cache (atom {})]
   (defn get-location [text bounds]
     (go (when-not (@cache [text bounds])
-          (-> (<! (promise->ch
-                   (js/ymaps.geocode text
-                                     #js {:boundedBy bounds
-                                          :results 1})))
-              .-geoObjects
-              (.get 0)
-              (#(swap! cache assoc [text bounds] %))))
+          (->
+           (<! (promise->ch
+                (js/ymaps.geocode text
+                                  #js {:boundedBy bounds
+                                       :results 1})))
+           .-geoObjects
+           (.get 0)
+           ;; could be 'undefined' here if no results
+           (#(swap! cache assoc [text bounds] %))))
         (@cache [text bounds]))))
 
 (defn add-point [map-o point]

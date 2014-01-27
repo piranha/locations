@@ -16,7 +16,7 @@
 (def app-state (atom {:state :edit
                       :input "Лукьяновская, 7"
                       :locations []
-                      :markers {}
+                      :points {}
                       :map {:options nil
                             :constructor nil
                             :object nil}}))
@@ -25,40 +25,31 @@
            (fn [_ _ _ new]
              (println (:locations new))))
 
-(defn search [ch {:keys [locations map] :as data}]
-  (let [{:keys [bounds object]} map]
+(defn search [data]
+  (let [{:keys [locations map]} @data
+        {:keys [bounds object]} map]
     (doseq [{:keys [text]} locations]
       (go
        (let [point (<! (get-location text bounds))]
-         (>! ch [:point [text point]]))))))
+         (om/update! data assoc-in [:points text] point))))))
 
-(defn handle-event [ev owner data-ch]
+(defn handle-event [ev owner]
   (let [data (om/get-props owner)]
     (condp = ev
-      :search (do (om/update! data assoc-in [:state] :display)
-                  (om/update! data update-in [:locations]
-                              #(parse-locations (:input @data)))
-                  (om/update! data assoc-in [:markers] {})
-                  (search data-ch @data))
-      :edit (do (println "EDIT")
-                (om/update! data assoc-in [:state] :edit))
+      :search (do (om/update! data merge
+                              {:state :display
+                               :points {}
+                               :locations (parse-locations (:input @data))})
+                  (search data))
+      :edit (do (om/update! data assoc-in [:state] :edit))
       js/console.log)))
-
-(defn handle-data [[ev payload] owner]
-  (let [data (om/get-props owner)
-        object (-> @data :map :object)]
-    (condp = ev
-      :point (let [[key point] payload]
-               (om/update! data assoc-in [:markers key] point)))))
 
 (defn root [{:keys [state input locations] :as data} owner]
   (reify
     om/IWillMount
     (will-mount [this]
-      (let [data-ch (control-chan handle-data owner)]
-        (om/set-state! owner :data data-ch)
-        (om/set-state! owner :control
-                       (control-chan handle-event owner data-ch))))
+      (om/set-state! owner :control
+                     (control-chan handle-event owner)))
 
     om/IRenderState
     (render-state [this {:keys [control]}]
