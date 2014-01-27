@@ -1,4 +1,5 @@
 (ns locations.views
+  (:require-macros [cljs.core.async.macros :refer [go alt!]])
   (:require [om.core :as om :include-macros true]
             [sablono.core :as html :refer [html] :include-macros true]
             [cljs.core.async :refer [chan put! >! <!]]
@@ -27,9 +28,14 @@
               [:button.btn.btn-primary {:on-click search} "Search"]]]]))))
 
 
-(defn single-address [item]
+(defn single-address [{:keys [text clear] :as item}]
   (om/component
-   (html [:li {:title (:clear item)} (:text item)])))
+   (html
+    [:li {:title clear
+          :style {:background (if (om/join item [:points text])
+                                "blue"
+                                "red")}}
+     text])))
 
 
 (defn address-display [locations owner control-c]
@@ -41,7 +47,7 @@
             [:header
              [:h1 "Locations"]
 
-             [:ul
+             [:ul {:style {:height "600px" :overflow-y "scroll"}}
               (for [item locations]
                 (om/build single-address item {:key :text}))]
 
@@ -64,22 +70,20 @@
 
         (let [points-old (:points (om/get-props owner))
               points-new (:points next-props)
-              map-object (-> next-props :map :object)]
+              map-object (-> next-props :map :object)
+
+              to-remove (for [[k point] points-old
+                              :when (and point (not (points-new k)))]
+                          point)
+              to-add (for [[k point] points-new
+                           :when (and point (not (points-old k)))]
+                       point)]
+
           (when map-object
-
-            ;; remove non-existent points
-            (doseq [[k point] points-old
-                    :when point]
-              (when-not (points-new k)
-                ;(println "WILL REMOVE" k)
-                (remove-point map-object point)))
-
-            ;; add new points
-            (doseq [[k point] points-new
-                    :when point]
-              (when-not (points-old k)
-                ;(println "WILL ADD" k)
-                (add-point map-object point))))))
+            (doseq [point to-remove]
+              (remove-point map-object point))
+            (doseq [point to-add]
+              (add-point map-object point)))))
 
       om/IRender
       (render [this]
