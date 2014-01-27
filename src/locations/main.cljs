@@ -26,8 +26,9 @@
              (println (:locations new))))
 
 (defn search [data]
-  (let [{:keys [locations map]} @data
+  (let [{:keys [locations points map]} @data
         {:keys [bounds object]} map]
+    (om/transact! data :points select-keys locations)
     (doseq [{:keys [text]} locations]
       (go
        (let [point (<! (get-location text bounds))]

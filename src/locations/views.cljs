@@ -76,7 +76,6 @@
             ;; add new points
             (doseq [[k point] points-new
                     :when point]
-              (js/console.log k)
               (when-not (points-old k)
                 (add-point map-object point))))))
 
