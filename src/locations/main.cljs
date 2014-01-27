@@ -29,11 +29,11 @@
   (let [{:keys [locations points map]} @data
         {:keys [bounds object]} map]
     (om/transact! data :points select-keys (mapv :text locations))
-    (doseq [{:keys [text]} locations]
+    (doseq [{:keys [text clear]} locations]
       (when-not (points text)
         ;(println "WILL SEARCH FOR" text)
         (go
-         (let [point (<! (get-location text bounds))]
+         (let [point (<! (get-location clear bounds))]
            (om/update! data assoc-in [:points text] point)))))))
 
 (defn handle-event [ev owner]
