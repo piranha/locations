@@ -1,23 +1,42 @@
 (ns locations.api
   (:require-macros [cljs.core.async.macros :refer [go alt!]])
-  (:require [locations.utils :refer [<?] :include-macros true]))
+  (:require [locations.utils :refer [promise->ch]]))
 
 
-(defn init-map [app-state]
-  (swap! app-state assoc-in [:map :constructor] js/ymaps.Map)
-
+(defn map-options []
   (let [defaults {:center [55.751574, 37.573856],
-                  :zoom 9}
-        store-options (fn [options]
-                        (swap! app-state assoc-in [:map :options] (clj->js options)))]
-
+                  :zoom 9}]
     (go (try
-          (let [res (<? (js/ymaps.geolocation.get #js {:autoReverseGeocode true}))
-                geo (-> res .-geoObjects (.get 0))
-                options (if geo
-                          {:bounds (-> geo .-properties (.get "boundedBy"))}
-                          defaults)]
-            (store-options options))
+          (let [res (<! (-> (js/ymaps.geolocation.get #js {:autoReverseGeocode true})
+                            promise->ch))
+                geo (-> res .-geoObjects (.get 0))]
+            (if geo
+              {:bounds (-> geo .-properties (.get "boundedBy"))}
+              defaults))
           (catch js/Error e
-            (println e)
-            (store-options defaults))))))
+            (println "position detection fail" e)
+            defaults)))))
+
+(defn create-map [node options]
+  (js/ymaps.Map. node options))
+
+(defn get-map-node [map-obj]
+  (-> map-obj .-container .getElement))
+
+(let [cache (atom {})]
+  (defn get-location [text bounds]
+    (go (when-not (@cache [text bounds])
+          (-> (<! (promise->ch
+                   (js/ymaps.geocode text
+                                     #js {:boundedBy bounds
+                                          :results 1})))
+              .-geoObjects
+              (.get 0)
+              (#(swap! cache assoc [text bounds] %))))
+        (@cache [text bounds]))))
+
+(defn add-point [map-o point]
+  (-> map-o .-geoObjects (.add point)))
+
+(defn remove-point [map-o point]
+  (-> map-o .-geoObjects (.remove point)))

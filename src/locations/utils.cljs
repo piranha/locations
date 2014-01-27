@@ -18,7 +18,6 @@
       (s/replace #"\(.*?\)" "")))
 
 (defn parse-locations [text]
-  (println text)
   (->> (s/split text #"\n")
        (mapv s/trim)
        (filterv seq)
@@ -32,7 +31,8 @@
             (recur (<! c)))))
     c))
 
-(defn <?* [promise]
+(defn promise->ch
+  [promise]
   (go
    (let [succ (chan)
          err (chan)]
