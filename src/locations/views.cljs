@@ -71,12 +71,14 @@
             (doseq [[k point] points-old
                     :when point]
               (when-not (points-new k)
+                ;(println "WILL REMOVE" k)
                 (remove-point map-object point)))
 
             ;; add new points
             (doseq [[k point] points-new
                     :when point]
               (when-not (points-old k)
+                ;(println "WILL ADD" k)
                 (add-point map-object point))))))
 
       om/IRender

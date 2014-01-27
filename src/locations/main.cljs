@@ -28,18 +28,19 @@
 (defn search [data]
   (let [{:keys [locations points map]} @data
         {:keys [bounds object]} map]
-    (om/transact! data :points select-keys locations)
+    (om/transact! data :points select-keys (mapv :text locations))
     (doseq [{:keys [text]} locations]
-      (go
-       (let [point (<! (get-location text bounds))]
-         (om/update! data assoc-in [:points text] point))))))
+      (when-not (points text)
+        ;(println "WILL SEARCH FOR" text)
+        (go
+         (let [point (<! (get-location text bounds))]
+           (om/update! data assoc-in [:points text] point)))))))
 
 (defn handle-event [ev owner]
   (let [data (om/get-props owner)]
     (condp = ev
       :search (do (om/update! data merge
                               {:state :display
-                               :points {}
                                :locations (parse-locations (:input @data))})
                   (search data))
       :edit (do (om/update! data assoc-in [:state] :edit))
